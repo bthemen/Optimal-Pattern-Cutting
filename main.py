@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # Define path to SVG file
-inputFile = "overlap.svg"
+inputFile = "disjoint.svg"
 inputRoot = Path("svg-input") / inputFile
 
 # Check if file exists
@@ -37,7 +37,11 @@ paths = root.findall(".//svg:path", ns)
 
 # Parse SVG d attribute
 def parse_svg_path(d_attr):
-    """Convert an SVG path string to a list of coordinates."""
+    """
+    Convert an SVG path string to a list of coordinates.
+    This function assumes simple paths with 'M' (move to) and 'L' (line to).
+    More complex paths (e.g. Bezier curves) will require additional parsing.
+    """
     points = []                 # Initialize list of points
     commands = d_attr.split()   # Split string by space
     for cmd in commands:
@@ -56,4 +60,30 @@ for path in paths:
         coord = parse_svg_path(d_attr)  # Convert to coordinates
         coordinates.append(coord)       # Store coordinates
 
-print(coordinates)
+## Overlap detection
+from shapely.geometry import Polygon
+
+# Create polygons
+polygons = []
+for coords in coordinates:
+    polygons.append(Polygon(coords))    # Create a Shapely polygon
+
+def check_for_overlaps(polygons):
+    """
+    Check if any of the presented polygons overlap.
+    """
+
+    overlap = False # Initialize
+
+    for i in range(len(polygons)):
+        for j in range(i + 1, len(polygons)):
+            if polygons[i].intersects(polygons[j]): # Check if jth Polygon overlaps with ith Polygon
+                print(f"Polygon {i} overlaps with Polygon {j}")
+                overlap = True
+
+    if not overlap: # Check if Polygons do not overlap
+        print("Polygons do not overlap")
+
+    return overlap
+
+check_for_overlaps(polygons)
