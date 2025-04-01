@@ -163,3 +163,4 @@ cython_debug/
 svg-input/*
 !svg-input/disjoint.svg
 !svg-input/overlap.svg
+!svg-input/overlap_advanced.svg

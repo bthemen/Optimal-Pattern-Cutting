@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # Define path to SVG file
-inputFile = "disjoint.svg"
+inputFile = "overlap_advanced.svg"
 inputRoot = Path("svg-input") / inputFile
 
 # Check if file exists
@@ -28,12 +28,25 @@ ns = {'svg': 'http://www.w3.org/2000/svg'}
 paths = root.findall(".//svg:path", ns)
 
 # All polygons are stored in path elements. Their d attribute determines the shape.
-# For example as in disjoint.svg: <path d="M 60.7,41.1 45.0,62.5 68.9,71.1 Z" />
+# For example the simple paths in disjoint.svg: <path d="M 60.7,41.1 45.0,62.5 68.9,71.1 Z" />
 # This means:
 #   M 60.7,41.1 --> Move to (60.7, 41.1) / create initial vertex at (60.7, 41.1)
 #   L 45.0,62.5 --> Line to (45.0, 62.5) / create a line from (60.7, 41.1) to (45.0, 62.5)
 #   L 68.9,71.1 --> Line to (68.9, 71.1) / create a line from (45.0, 62.5) to (68.9, 71.1)
 #   Z --> Close the polygon / create a line from (68.9, 71.1) to (60.7, 41.1)
+
+# A more complex example is the Bezier curve in overlap_advanced.svg:
+# <path d="M 54.8,50.8 66.2,67.5 92.2,58.7 C 80.4,53.2 68.3,48.7 54.8,50.8 Z" />
+#   M 54.8,50.8 --> Move to (54.8, 50.8) / create initial vertex at (54.8, 50.8)
+#   L 66.2,67.5 --> Line to (66.2, 67.5) / create a line from (54.8, 50.8) to (66.2, 67.5)
+#   L 92.2,58.7 --> Line to (92.2, 58.7) / create a line from (66.2, 67.5) to (92.2, 58.7)
+#   C 80.4,53.2 68.3,48.7 54.8,50.8 --> Cubic Bezier curve to (54.8, 50.8) with control points (80.4, 53.2) and (68.3, 48.7)
+#   Z --> Close the curve
+# Since Bezier curves are smooth, a polygon has to be approximated through discretization.
+
+from svgpathtools import svg2paths
+from svg.path import parse_path
+import numpy as np
 
 # Parse SVG d attribute
 def parse_svg_path(d_attr):
@@ -43,13 +56,19 @@ def parse_svg_path(d_attr):
     More complex paths (e.g. Bezier curves) will require additional parsing.
     """
     points = []                 # Initialize list of points
-    commands = d_attr.split()   # Split string by space
-    for cmd in commands:
-        if cmd[0].isalpha():    # Ignore command letters
-            continue
+    
+    if "C" not in d_attr:   # Simple paths
+        commands = d_attr.split()   # Split string by space
+        for cmd in commands:
+            if cmd[0].isalpha():    # Ignore command letters
+                continue
 
-        x, y = map(float, cmd.strip(",").split(","))    # Convert string to float pairs in a map
-        points.append((x, y))   # Add map to the list of points
+            x, y = map(float, cmd.strip(",").split(","))    # Convert string to float pairs in a map
+            points.append((x, y))   # Add map to the list of points
+
+    else:   # Paths containing Bezier curves
+        path = parse_path(d_attr)
+
     return points
 
 # Fetch coordinates
@@ -61,6 +80,29 @@ for path in paths:
         coordinates.append(coord)       # Store coordinates
 
 print(f"Found {len(coordinates)} pattern pieces")
+
+
+
+paths, attributes = svg2paths(inputRoot)
+print(paths)
+print(attributes)
+exit(1)
+
+## Discretizing Bezier curve
+# Define cubic Bezier function
+def cubic_bezier(t, p0, p1, p2, p3):
+    """
+    Calculate a point on a cubic Bezier curve.
+    :param t: The parameter t (0 <= t <= 1)
+    :param p0, p1, p2, p3: Control points
+    :return: The point on the curve at t
+    """
+    return ((1 - t) ** 3 * np.array(p0) + 
+            3 * (1 - t) ** 2 * np.array(p1) +
+            3 * (1 - t) * t ** 2 * np.array(p2) + 
+            t ** 3 * np.array(p3))
+
+# Extract the control points from the Bezier path
 
 ## Overlap detection
 from shapely.geometry import Polygon
