@@ -162,3 +162,4 @@ cython_debug/
 # SVG input files
 svg-input/*
 !svg-input/disjoint.svg
+!svg-input/overlap.svg

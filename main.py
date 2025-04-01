@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # Define path to SVG file
-inputFile = "disjoint.svg"
+inputFile = "overlap.svg"
 inputRoot = Path("svg-input") / inputFile
 
 # Check if file exists
