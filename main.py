@@ -60,6 +60,8 @@ for path in paths:
         coord = parse_svg_path(d_attr)  # Convert to coordinates
         coordinates.append(coord)       # Store coordinates
 
+print(f"Found {len(coordinates)} pattern pieces")
+
 ## Overlap detection
 from shapely.geometry import Polygon
 
@@ -78,11 +80,11 @@ def check_for_overlaps(polygons):
     for i in range(len(polygons)):
         for j in range(i + 1, len(polygons)):
             if polygons[i].intersects(polygons[j]): # Check if jth Polygon overlaps with ith Polygon
-                print(f"Polygon {i} overlaps with Polygon {j}")
+                print(f"Piece {i} overlaps with Piece {j}")
                 overlap = True
 
     if not overlap: # Check if Polygons do not overlap
-        print("Polygons do not overlap")
+        print("Pieces do not overlap")
 
     return overlap
 
