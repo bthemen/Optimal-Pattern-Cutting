@@ -1,10 +1,18 @@
-# This program uses the shapely library
-
-## Read SVG file
-# Import libraries
+## Import libraries
+# Root directory
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+# SVG files
+from svg.path import parse_path, Line, CubicBezier, Move, Close, Arc, QuadraticBezier
+
+# Numeric calculations
+import numpy as np
+
+# Polygon creation
+from shapely.geometry import Polygon
+
+## Read SVG file
 # Define path to SVG file
 inputFile = "overlap_advanced.svg"
 inputRoot = Path("svg-input") / inputFile
@@ -44,10 +52,6 @@ paths = root.findall(".//svg:path", ns)
 #   Z --> Close the curve
 # Since Bezier curves are smooth, a polygon has to be approximated through discretization.
 
-from svgpathtools import svg2paths
-from svg.path import parse_path
-import numpy as np
-
 # Parse SVG d attribute
 def parse_svg_path(d_attr):
     """
@@ -67,7 +71,26 @@ def parse_svg_path(d_attr):
             points.append((x, y))   # Add map to the list of points
 
     else:   # Paths containing Bezier curves
-        path = parse_path(d_attr)
+        path = parse_path(d_attr)   # Parse the d attribute
+
+        for segment in path:
+
+            print(segment.length())
+
+            if isinstance(segment, Move):   # Move to
+                points.append((segment.end.real, segment.end.imag))
+            elif isinstance(segment, Line): # Line to
+                points.append((segment.end.real, segment.end.imag))
+            elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
+                points.append((segment.control1.real, segment.control1.imag, segment.control2.real, segment.control2.imag, segment.end.real, segment.end.imag))
+            elif isinstance(segment, QuadraticBezier):  # Quadratic Bezier curve
+                points.append((segment.control.real, segment.control.imag, segment.end.real, segment.end.imag))
+            elif isinstance(segment, Arc):  # Arc
+                points.append((segment.end.real, segment.end.imag))
+            elif isinstance(segment, Close):    # Close path
+                pass
+            else:
+                print(f"Unhandled segment type: {type(segment)}")
 
     return points
 
@@ -105,7 +128,7 @@ def cubic_bezier(t, p0, p1, p2, p3):
 # Extract the control points from the Bezier path
 
 ## Overlap detection
-from shapely.geometry import Polygon
+
 
 # Create polygons
 polygons = []
