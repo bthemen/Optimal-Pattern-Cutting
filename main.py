@@ -8,6 +8,7 @@ from svg.path import parse_path, Line, CubicBezier, Move, Close, Arc, QuadraticB
 
 # Numeric calculations
 import numpy as np
+import math
 
 # Polygon creation
 from shapely.geometry import Polygon
@@ -52,48 +53,6 @@ svg_paths = root.findall(".//svg:path", ns)
 #   Z --> Close the curve
 # Since Bezier curves are smooth, a polygon has to be approximated through discretization.
 
-# Parse SVG d attribute
-def parse_svg_path(d_attr):
-    """
-    Convert an SVG path string to a list of coordinates.
-    This function assumes simple paths with 'M' (move to) and 'L' (line to).
-    More complex paths (e.g. Bezier curves) will require additional parsing.
-    """
-    points = []                 # Initialize list of points
-    
-    if "C" not in d_attr:   # Simple paths
-        commands = d_attr.split()   # Split string by space
-        for cmd in commands:
-            if cmd[0].isalpha():    # Ignore command letters
-                continue
-
-            x, y = map(float, cmd.strip(",").split(","))    # Convert string to float pairs in a map
-            points.append((x, y))   # Add map to the list of points
-
-    else:   # Paths containing Bezier curves
-        path = parse_path(d_attr)   # Parse the d attribute
-
-        for segment in path:
-
-            print(segment.length())
-
-            if isinstance(segment, Move):   # Move to
-                points.append((segment.end.real, segment.end.imag))
-            elif isinstance(segment, Line): # Line to
-                points.append((segment.end.real, segment.end.imag))
-            elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
-                points.append((segment.control1.real, segment.control1.imag, segment.control2.real, segment.control2.imag, segment.end.real, segment.end.imag))
-            elif isinstance(segment, QuadraticBezier):  # Quadratic Bezier curve
-                points.append((segment.control.real, segment.control.imag, segment.end.real, segment.end.imag))
-            elif isinstance(segment, Arc):  # Arc
-                points.append((segment.end.real, segment.end.imag))
-            elif isinstance(segment, Close):    # Close path
-                pass
-            else:
-                print(f"Unhandled segment type: {type(segment)}")
-
-    return points
-
 # Fetch path objects
 paths = []
 for svg_path in svg_paths:
@@ -104,7 +63,7 @@ for svg_path in svg_paths:
 
 print(f"Found {len(paths)} pattern pieces")
 
-## Discretizing Bezier curve
+## Extract polygon coordinates from path objects
 # Define cubic Bezier function
 def cubic_bezier(t, p0, p1, p2, p3):
     """
@@ -113,10 +72,47 @@ def cubic_bezier(t, p0, p1, p2, p3):
     :param p0, p1, p2, p3: Control points
     :return: The point on the curve at t
     """
-    return ((1 - t) ** 3 * np.array(p0) + 
-            3 * (1 - t) ** 2 * np.array(p1) +
-            3 * (1 - t) * t ** 2 * np.array(p2) + 
-            t ** 3 * np.array(p3))
+    return ((1 - t) ** 3 * p0 + 
+            3 * (1 - t) ** 2 * p1 +
+            3 * (1 - t) * t ** 2 * p2 + 
+            t ** 3 * p3)
+
+# Extract coordinates
+coordinates = []
+
+mm = 1e-3           # Millimeter to meter
+step_size = 1 * mm  # Step size of workspace grid [m]
+
+for path in paths:  # Loop over all pattern pieces
+    coords = []
+    for segment in path:    # Loop over all path segments
+        if isinstance(segment, Move):           # Move to
+                coords.append((segment.end.real, segment.end.imag))
+        elif isinstance(segment, Line):         # Line to
+                coords.append((segment.end.real, segment.end.imag))
+        elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
+                # Extract data from segment
+                p0 = np.array([segment.start.real, segment.start.imag]) * mm
+                p1 = np.array([segment.control1.real, segment.control1.imag]) * mm
+                p2 = np.array([segment.control2.real, segment.control2.imag]) * mm
+                p3 = np.array([segment.end.real, segment.end.imag]) * mm
+
+                # Generate points along the curve
+                curve_length = segment.length(error=1e-5) * mm
+                num_points = math.ceil(curve_length / step_size)
+
+                for i in range(num_points):
+                    t = i / (num_points - 1)  # t goes from 0 to 1
+                    point = cubic_bezier(t, p0, p1, p2, p3) / mm
+
+                    coords.append(point.tolist())
+
+        elif isinstance(segment, Close):        # Close path
+                pass
+        else:
+                print(f"Unhandled segment type: {type(segment)}")
+
+    coordinates.append(coords)
 
 # Extract the control points from the Bezier path
 
