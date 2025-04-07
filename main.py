@@ -33,7 +33,7 @@ root = tree.getroot()
 ns = {'svg': 'http://www.w3.org/2000/svg'}
 
 # Find all path elements
-paths = root.findall(".//svg:path", ns)
+svg_paths = root.findall(".//svg:path", ns)
 
 # All polygons are stored in path elements. Their d attribute determines the shape.
 # For example the simple paths in disjoint.svg: <path d="M 60.7,41.1 45.0,62.5 68.9,71.1 Z" />
@@ -94,22 +94,15 @@ def parse_svg_path(d_attr):
 
     return points
 
-# Fetch coordinates
-coordinates = []
-for path in paths:
-    d_attr = path.get("d")  # Get the SVG d attribute
+# Fetch path objects
+paths = []
+for svg_path in svg_paths:
+    d_attr = svg_path.get("d")  # Get the SVG d attribute
     if d_attr:
-        coord = parse_svg_path(d_attr)  # Convert to coordinates
-        coordinates.append(coord)       # Store coordinates
+        path = parse_path(d_attr)   # Convert to path object
+        paths.append(path)          # Store path objects
 
-print(f"Found {len(coordinates)} pattern pieces")
-
-
-
-paths, attributes = svg2paths(inputRoot)
-print(paths)
-print(attributes)
-exit(1)
+print(f"Found {len(paths)} pattern pieces")
 
 ## Discretizing Bezier curve
 # Define cubic Bezier function
