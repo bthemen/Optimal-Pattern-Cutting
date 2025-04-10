@@ -15,7 +15,7 @@ from shapely.geometry import Polygon
 
 ## Read SVG file
 # Define path to SVG file
-inputFile = "overlap_advanced.svg"
+inputFile = "rin-final-v2.svg"
 inputRoot = Path("svg-input") / inputFile
 
 # Check if file exists
@@ -31,7 +31,7 @@ root = tree.getroot()
 
 ## Decipher SVG file
 # Namespace for parsing SVG files correctly
-ns = {'svg': 'http://www.w3.org/2000/svg'}
+ns = {"svg": "http://www.w3.org/2000/svg"}
 
 # Find all path elements
 svg_paths = root.findall(".//svg:path", ns)
@@ -97,7 +97,7 @@ for path in paths:  # Loop over all pattern pieces
                 p3 = np.array([segment.end.real, segment.end.imag])
 
                 # Generate points along the curve
-                curve_length = segment.length(error=1e-5)
+                curve_length = segment.length(error = 1e-5)
                 num_points = math.ceil(curve_length / step_size)
 
                 for i in range(num_points - 1):
@@ -124,17 +124,20 @@ def check_for_overlaps(polygons):
     Check if any of the presented polygons overlap.
     """
 
-    overlap = False # Initialize
+    # Initialize
+    overlap_status = False
+    overlap_pieces = []
 
     for i in range(len(polygons)):
         for j in range(i + 1, len(polygons)):
             if polygons[i].intersects(polygons[j]): # Check if jth Polygon overlaps with ith Polygon
                 print(f"Piece {i} overlaps with Piece {j}")
-                overlap = True
+                overlap_status = True
+                overlap_pieces.append((i, j))
 
-    if not overlap: # Check if Polygons do not overlap
+    if not overlap_status: # Check if Polygons do not overlap
         print("Pieces do not overlap")
 
-    return overlap
+    return overlap_pieces
 
-check_for_overlaps(polygons)
+overlap_pieces = check_for_overlaps(polygons)
