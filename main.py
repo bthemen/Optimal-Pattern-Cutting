@@ -49,7 +49,7 @@ svg_paths = root.findall(".//svg:path", ns)
 #   M 54.8,50.8 --> Move to (54.8, 50.8) / create initial vertex at (54.8, 50.8)
 #   L 66.2,67.5 --> Line to (66.2, 67.5) / create a line from (54.8, 50.8) to (66.2, 67.5)
 #   L 92.2,58.7 --> Line to (92.2, 58.7) / create a line from (66.2, 67.5) to (92.2, 58.7)
-#   C 80.4,53.2 68.3,48.7 54.8,50.8 --> Cubic Bezier curve to (54.8, 50.8) with control points (80.4, 53.2) and (68.3, 48.7)
+#   C 80.4,53.2 68.3,48.7 54.8,50.8 --> Cubic Bezier curve from (92.2, 58.7) to (54.8, 50.8) with control points (80.4, 53.2) and (68.3, 48.7)
 #   Z --> Close the curve
 # Since Bezier curves are smooth, a polygon has to be approximated through discretization.
 
@@ -101,8 +101,8 @@ for path in paths:  # Loop over all pattern pieces
                 curve_length = segment.length(error=1e-5) * mm
                 num_points = math.ceil(curve_length / step_size)
 
-                for i in range(num_points):
-                    t = i / (num_points - 1)  # t goes from 0 to 1
+                for i in range(num_points - 1):
+                    t = (i + 1) / (num_points - 1)  # t goes from 0 to 1
                     point = cubic_bezier(t, p0, p1, p2, p3) / mm
 
                     coords.append(point.tolist())
@@ -114,11 +114,7 @@ for path in paths:  # Loop over all pattern pieces
 
     coordinates.append(coords)
 
-# Extract the control points from the Bezier path
-
 ## Overlap detection
-
-
 # Create polygons
 polygons = []
 for coords in coordinates:
