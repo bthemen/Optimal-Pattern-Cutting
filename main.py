@@ -80,8 +80,7 @@ def cubic_bezier(t, p0, p1, p2, p3):
 # Extract coordinates
 coordinates = []
 
-mm = 1e-3           # Millimeter to meter
-step_size = 1 * mm  # Step size of workspace grid [m]
+step_size = 1  # Step size of workspace grid [mm]
 
 for path in paths:  # Loop over all pattern pieces
     coords = []
@@ -92,18 +91,18 @@ for path in paths:  # Loop over all pattern pieces
                 coords.append((segment.end.real, segment.end.imag))
         elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
                 # Extract data from segment
-                p0 = np.array([segment.start.real, segment.start.imag]) * mm
-                p1 = np.array([segment.control1.real, segment.control1.imag]) * mm
-                p2 = np.array([segment.control2.real, segment.control2.imag]) * mm
-                p3 = np.array([segment.end.real, segment.end.imag]) * mm
+                p0 = np.array([segment.start.real, segment.start.imag])
+                p1 = np.array([segment.control1.real, segment.control1.imag])
+                p2 = np.array([segment.control2.real, segment.control2.imag])
+                p3 = np.array([segment.end.real, segment.end.imag])
 
                 # Generate points along the curve
-                curve_length = segment.length(error=1e-5) * mm
+                curve_length = segment.length(error=1e-5)
                 num_points = math.ceil(curve_length / step_size)
 
                 for i in range(num_points - 1):
                     t = (i + 1) / (num_points - 1)  # t goes from 0 to 1
-                    point = cubic_bezier(t, p0, p1, p2, p3) / mm
+                    point = cubic_bezier(t, p0, p1, p2, p3)
 
                     coords.append(point.tolist())
 
