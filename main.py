@@ -171,12 +171,18 @@ def check_for_overlaps(polygons):
 
 overlap_pieces = check_for_overlaps(polygons)
 
+## Centroid calculation
+# Calculate the geometric center of each polygon
+centroids = []
+for polygon in polygons:
+     centroids.append((polygon.centroid.x, polygon.centroid.y))
+
 ## Write new SVG file
 def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.svg"):
     output_dir = Path("svg-output")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = output_dir / output_filename
+    output_path = output_dir / output_filename.replace(".svg", "_discretized.svg")
 
     svg_ns = "http://www.w3.org/2000/svg"
     nsmap = {None: svg_ns}
@@ -214,4 +220,4 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
 
     print(f"SVG with discretized polygons written to {output_path}")
 
-write_svg(coordinates, ws_width, ws_height)
+write_svg(coordinates, ws_width, ws_height, inputFile)
