@@ -13,6 +13,18 @@ import math
 # Polygon creation
 from shapely.geometry import Polygon
 
+## Workspace parameters
+ws_width = 1300     # Workspace width [mm]
+ws_height = 2500    # Workspace height [mm]
+ws_step = 10        # Step size of workspace grid [mm]
+
+## Units
+def px_to_mm(pixels, dpi=96):
+    return pixels * 25.4 / dpi
+
+def mm_to_px(mm, dpi=96):
+    return mm * dpi / 25.4
+
 ## Read SVG file
 # Define path to SVG file
 inputFile = "rin-final-v2.svg"
@@ -96,9 +108,8 @@ def cubic_bezier(t, p0, p1, p2, p3):
             t ** 3 * p3)
 
 # Extract coordinates
+# Coordinates are stored in pixels!!
 coordinates = []
-
-step_size = 1  # Step size of workspace grid [mm]
 
 for path in paths:  # Loop over all pattern pieces
     coords = []
@@ -109,14 +120,14 @@ for path in paths:  # Loop over all pattern pieces
                 coords.append((segment.end.real, segment.end.imag))
         elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
                 # Extract data from segment
-                p0 = np.array([segment.start.real, segment.start.imag])
-                p1 = np.array([segment.control1.real, segment.control1.imag])
-                p2 = np.array([segment.control2.real, segment.control2.imag])
-                p3 = np.array([segment.end.real, segment.end.imag])
+                p0 = np.array((segment.start.real, segment.start.imag))
+                p1 = np.array((segment.control1.real, segment.control1.imag))
+                p2 = np.array((segment.control2.real, segment.control2.imag))
+                p3 = np.array((segment.end.real, segment.end.imag))
 
                 # Generate points along the curve
                 curve_length = segment.length(error = 1e-5)
-                num_points = math.ceil(curve_length / step_size)
+                num_points = math.ceil(curve_length / ws_step)
 
                 for i in range(num_points - 1):
                     t = (i + 1) / (num_points - 1)  # t goes from 0 to 1
@@ -159,3 +170,48 @@ def check_for_overlaps(polygons):
     return overlap_pieces
 
 overlap_pieces = check_for_overlaps(polygons)
+
+## Write new SVG file
+def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.svg"):
+    output_dir = Path("svg-output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = output_dir / output_filename
+
+    svg_ns = "http://www.w3.org/2000/svg"
+    nsmap = {None: svg_ns}
+
+    # Create SVG root element with width, height, and viewBox in mm
+    svg = etree.Element("{%s}svg" % svg_ns, nsmap=nsmap)
+    svg.set("version", "1.1")
+    svg.set("width", f"{ws_width}mm")
+    svg.set("height", f"{ws_height}mm")
+    svg.set("viewBox", f"0 0 {ws_width} {ws_height}")
+
+    # Create paths for each polygon
+    for polygon in coordinates:
+        if not polygon:
+            continue  # Skip empty polygons
+
+        # Build path data using M, L, and Z commands
+        d_parts = [f"M {px_to_mm(polygon[0][0])} {px_to_mm(polygon[0][1])}"]
+        d_parts += [f"L {px_to_mm(x)} {px_to_mm(y)}" for (x, y) in polygon[1:]]
+        d_parts.append("Z")  # Close the polygon
+
+        d_attr = " ".join(d_parts)
+
+        path = etree.Element("path")
+        path.set("d", d_attr)
+        path.set("fill", "none")  # Optional: outline only
+        path.set("stroke", "red")
+        path.set("stroke-width", "1")  # Optional: thin stroke for precision
+
+        svg.append(path)
+
+    # Write the SVG to file
+    tree = etree.ElementTree(svg)
+    tree.write(str(output_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+    print(f"SVG with discretized polygons written to {output_path}")
+
+write_svg(coordinates, ws_width, ws_height)
