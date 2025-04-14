@@ -1,7 +1,7 @@
 ## Import libraries
 # Root directory
-import xml.etree.ElementTree as ET
 from pathlib import Path
+from lxml import etree
 
 # SVG files
 from svg.path import parse_path, Line, CubicBezier, Move, Close, Arc, QuadraticBezier
@@ -26,15 +26,33 @@ else:   # Otherwise start the import
     print(f"Importing SVG file: {inputFile}")
 
 # Load SVG file
-tree = ET.parse(inputRoot)
+tree = etree.parse(inputRoot)
 root = tree.getroot()
 
 ## Decipher SVG file
-# Namespace for parsing SVG files correctly
-ns = {"svg": "http://www.w3.org/2000/svg"}
+# Check for invalid paths
+def check_invalid_paths(element):
+    while element is not None:  # Loop until first element is found
+        if element.tag.endswith("clipPath") or element.tag.endswith("defs"):
+            return True
+        element = element.getparent()   # Go to parent element
+    return False
 
-# Find all path elements
-svg_paths = root.findall(".//svg:path", ns)
+# Extract path 
+def extract_paths(svg_root):
+    # Initialize list
+    paths = []
+
+    for element in svg_root.iter():
+        # Only process <path> elements NOT inside <clipPath> or <defs>
+        if element.tag.endswith("path") and not check_invalid_paths(element):
+            d = element.get("d")
+            if d:
+                paths.append(element)
+    return paths
+
+# List all suitable path elements
+svg_paths = extract_paths(root)
 
 # All polygons are stored in path elements. Their d attribute determines the shape.
 # For example the simple paths in disjoint.svg: <path d="M 60.7,41.1 45.0,62.5 68.9,71.1 Z" />
