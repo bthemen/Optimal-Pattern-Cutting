@@ -178,7 +178,7 @@ for polygon in polygons:
      centroids.append((polygon.centroid.x, polygon.centroid.y))
 
 ## Write new SVG file
-def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.svg"):
+def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg"):
     output_dir = Path("svg-output")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -195,13 +195,16 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
     svg.set("viewBox", f"0 0 {ws_width} {ws_height}")
 
     # Create paths for each polygon
-    for polygon in coordinates:
+    for polygon in polygons:
         if not polygon:
             continue  # Skip empty polygons
 
+        # Get the coordinates of the polygon and convert them into a list of points
+        coordinates = list(polygon.exterior.coords)
+
         # Build path data using M, L, and Z commands
-        d_parts = [f"M {px_to_mm(polygon[0][0])} {px_to_mm(polygon[0][1])}"]
-        d_parts += [f"L {px_to_mm(x)} {px_to_mm(y)}" for (x, y) in polygon[1:]]
+        d_parts = [f"M {px_to_mm(coordinates[0][0])} {px_to_mm(coordinates[0][1])}"]
+        d_parts += [f"L {px_to_mm(x)} {px_to_mm(y)}" for (x, y) in coordinates[1:]]
         d_parts.append("Z")  # Close the polygon
 
         d_attr = " ".join(d_parts)
@@ -214,10 +217,15 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
 
         svg.append(path)
 
+        # Create the <circle> element at the centroid with a radius of 20 mm (converted to pixels)
+        centroid = (polygon.centroid.x, polygon.centroid.y)
+        circle_element = etree.SubElement(svg, '{http://www.w3.org/2000/svg}circle', cx=str(centroid[0]), cy=str(centroid[1]),
+                                          r=str(20), fill="red")
+
     # Write the SVG to file
     tree = etree.ElementTree(svg)
     tree.write(str(output_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
 
     print(f"SVG with discretized polygons written to {output_path}")
 
-write_svg(coordinates, ws_width, ws_height, inputFile)
+write_svg(polygons, ws_width, ws_height, inputFile)
