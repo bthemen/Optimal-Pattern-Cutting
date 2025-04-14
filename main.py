@@ -159,3 +159,30 @@ def check_for_overlaps(polygons):
     return overlap_pieces
 
 overlap_pieces = check_for_overlaps(polygons)
+
+## Write new SVG file
+def write_svg_with_paths(paths, output_filename="filtered_paths.svg"):
+    output_dir = Path("svg-output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = output_dir / output_filename
+
+    # Set up SVG namespace
+    svg_ns = "http://www.w3.org/2000/svg"
+    nsmap = {None: svg_ns}  # Default namespace
+
+    # Create a new SVG root element with namespace
+    svg = etree.Element("{%s}svg" % svg_ns, nsmap=nsmap)
+    svg.set("version", "1.1")
+
+    # Add all path elements to the new SVG
+    for path in paths:
+        svg.append(path)
+
+    # Write the new SVG to file with pretty formatting
+    tree = etree.ElementTree(svg)
+    tree.write(str(output_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+    print(f"SVG with {len(paths)} paths written to {output_path}")
+
+write_svg_with_paths(svg_paths)
