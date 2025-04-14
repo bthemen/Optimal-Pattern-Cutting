@@ -16,7 +16,7 @@ from shapely.geometry import Polygon
 ## Workspace parameters
 ws_width = 1300     # Workspace width [mm]
 ws_height = 2500    # Workspace height [mm]
-ws_step = 2         # Step size of workspace grid [mm]
+ws_step = 10        # Step size of workspace grid [mm]
 
 ## Units
 def px_to_mm(pixels, dpi=96):
@@ -203,7 +203,7 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
         path = etree.Element("path")
         path.set("d", d_attr)
         path.set("fill", "none")  # Optional: outline only
-        path.set("stroke", "black")
+        path.set("stroke", "red")
         path.set("stroke-width", "1")  # Optional: thin stroke for precision
 
         svg.append(path)
