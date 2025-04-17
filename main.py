@@ -12,6 +12,7 @@ import math
 
 # Polygon creation
 from shapely.geometry import Polygon
+from shapely.affinity import translate, rotate
 
 ## Workspace parameters
 ws_width = 1300     # Workspace width [mm]
@@ -91,7 +92,8 @@ for svg_path in svg_paths:
         path = parse_path(d_attr)   # Convert to path object
         paths.append(path)          # Store path objects
 
-print(f"Found {len(paths)} pattern pieces")
+pattern_number = len(paths)     # Number of pattern pieces
+print(f"Found {pattern_number} pattern pieces")
 
 ## Extract polygon coordinates from path objects
 # Define cubic Bezier function
@@ -108,16 +110,15 @@ def cubic_bezier(t, p0, p1, p2, p3):
             t ** 3 * p3)
 
 # Extract coordinates
-# Coordinates are stored in pixels!!
 coordinates = []
 
-for path in paths:  # Loop over all pattern pieces
+for piece, path in enumerate(paths):  # Loop over all pattern pieces
     coords = []
-    for segment in path:    # Loop over all path segments
+    for i, segment in enumerate(path):    # Loop over all path segments
         if isinstance(segment, Move):           # Move to
-                coords.append((segment.end.real, segment.end.imag))
+                coords.append(px_to_mm(np.array([segment.end.real, segment.end.imag])))
         elif isinstance(segment, Line):         # Line to
-                coords.append((segment.end.real, segment.end.imag))
+                coords.append(px_to_mm(np.array([segment.end.real, segment.end.imag])))
         elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
                 # Extract data from segment
                 p0 = np.array((segment.start.real, segment.start.imag))
@@ -129,11 +130,11 @@ for path in paths:  # Loop over all pattern pieces
                 curve_length = segment.length(error = 1e-5)
                 num_points = math.ceil(curve_length / ws_step)
 
-                for i in range(num_points - 1):
-                    t = (i + 1) / (num_points - 1)  # t goes from 0 to 1
+                for j in range(num_points - 1):
+                    t = (j + 1) / (num_points - 1)  # t goes from 0 to 1
                     point = cubic_bezier(t, p0, p1, p2, p3)
 
-                    coords.append(point.tolist())
+                    coords.append(px_to_mm(point))
 
         elif isinstance(segment, Close):        # Close path
                 pass
@@ -171,12 +172,27 @@ def check_for_overlaps(polygons):
 
 overlap_pieces = check_for_overlaps(polygons)
 
+## Centroid calculation
+# Calculate the geometric center of each polygon
+centroids = np.empty((pattern_number, 2), dtype=float)
+for i, polygon in enumerate(polygons):
+     centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
+
+## Moving centroids
+translation = [0, 0]
+rotation = 0
+
+new_polygons = []
+for polygon in polygons:
+     p = translate(polygon, xoff=translation[0], yoff=translation[1])
+     new_polygons.append(rotate(p, angle=rotation))
+
 ## Write new SVG file
-def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.svg"):
+def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg"):
     output_dir = Path("svg-output")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = output_dir / output_filename
+    output_path = output_dir / output_filename.replace(".svg", "_discretized.svg")
 
     svg_ns = "http://www.w3.org/2000/svg"
     nsmap = {None: svg_ns}
@@ -189,13 +205,16 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
     svg.set("viewBox", f"0 0 {ws_width} {ws_height}")
 
     # Create paths for each polygon
-    for polygon in coordinates:
+    for polygon in polygons:
         if not polygon:
             continue  # Skip empty polygons
 
+        # Get the coordinates of the polygon and convert them into a list of points
+        coordinates = polygon.exterior.coords
+
         # Build path data using M, L, and Z commands
-        d_parts = [f"M {px_to_mm(polygon[0][0])} {px_to_mm(polygon[0][1])}"]
-        d_parts += [f"L {px_to_mm(x)} {px_to_mm(y)}" for (x, y) in polygon[1:]]
+        d_parts = [f"M {coordinates[0][0]} {coordinates[0][1]}"]
+        d_parts += [f"L {x} {y}" for (x, y) in coordinates[1:]]
         d_parts.append("Z")  # Close the polygon
 
         d_attr = " ".join(d_parts)
@@ -208,10 +227,15 @@ def write_svg(coordinates, ws_width, ws_height, output_filename="filtered_paths.
 
         svg.append(path)
 
+        # Create the <circle> element at the centroid with a radius of 20 mm (converted to pixels)
+        centroid = (polygon.centroid.x, polygon.centroid.y)
+        etree.SubElement(svg, '{http://www.w3.org/2000/svg}circle', cx=str(centroid[0]), cy=str(centroid[1]),
+                                          r=str(5), fill="red")
+
     # Write the SVG to file
     tree = etree.ElementTree(svg)
     tree.write(str(output_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
 
     print(f"SVG with discretized polygons written to {output_path}")
 
-write_svg(coordinates, ws_width, ws_height)
+write_svg(new_polygons, ws_width, ws_height, inputFile)
