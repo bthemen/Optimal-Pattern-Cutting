@@ -18,6 +18,7 @@ from shapely.affinity import translate, rotate
 ws_width = 1300     # Workspace width [mm]
 ws_height = 2500    # Workspace height [mm]
 ws_step = 10        # Step size of workspace grid [mm]
+ws_tolerance = 10   # Tolerance workspace overlap [mm]
 
 ## Units
 def px_to_mm(pixels, dpi=96):
@@ -143,13 +144,30 @@ for piece, path in enumerate(paths):  # Loop over all pattern pieces
 
     coordinates.append(coords)
 
-## Overlap detection
-# Create polygons
+## Create polygons
 polygons = []
 for coords in coordinates:
     polygons.append(Polygon(coords))    # Create a Shapely polygon
 
-def check_for_overlaps(polygons):
+## Centroid calculation
+# Calculate the geometric center of each polygon
+centroids = np.empty((pattern_number, 2), dtype=float)
+for i, polygon in enumerate(polygons):
+     centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
+
+## Moving centroids
+translation = [0, 0]
+rotation = 15
+
+new_polygons = []
+for polygon in polygons:
+     p = translate(polygon, xoff=translation[0], yoff=translation[1])
+     new_polygons.append(rotate(p, angle=rotation))
+
+
+## Overlap detection
+# Between pattern pieces
+def pattern_overlap(polygons):
     """
     Check if any of the presented polygons overlap.
     """
@@ -166,26 +184,52 @@ def check_for_overlaps(polygons):
                 overlap_pieces.append((i, j))
 
     if not overlap_status: # Check if Polygons do not overlap
-        print("Pieces do not overlap")
+        print("Pattern pieces do not overlap with each other")
 
     return overlap_pieces
 
-overlap_pieces = check_for_overlaps(polygons)
+# With workspace
+def workspace_overlap(polygons, width=ws_width, height=ws_height):
+    """
+    Check if any of the pattern piece fall outside of the workspace
+    """
 
-## Centroid calculation
-# Calculate the geometric center of each polygon
-centroids = np.empty((pattern_number, 2), dtype=float)
-for i, polygon in enumerate(polygons):
-     centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
+    # Initialize
+    overlap_status = False
+    overlap_ws = []
 
-## Moving centroids
-translation = [0, 0]
-rotation = 0
+    for i, polygon in enumerate(polygons):
+        # Extract coordinates
+        coords = polygon.exterior.coords
 
-new_polygons = []
-for polygon in polygons:
-     p = translate(polygon, xoff=translation[0], yoff=translation[1])
-     new_polygons.append(rotate(p, angle=rotation))
+        # Find maximum and minimum
+        coord_max = np.max(coords, axis=0)
+        coord_min = np.min(coords, axis=0)
+
+        # Check if coordinates overlap with workspace
+        if coord_max[0] > width - ws_tolerance:
+            overlap_status = True
+            print(f"Pattern piece {i} exceeds maximum workspace width")
+        if coord_max[1] > height - ws_tolerance:
+            overlap_status = True
+            print(f"Pattern piece {i} exceeds maximum workspace height")
+        if coord_min[0] < ws_tolerance:
+            overlap_status = True
+            print(f"Pattern piece {i} exceeds minimum workspace width")
+        if coord_min[1] < ws_tolerance:
+            overlap_status = True
+            print(f"Pattern piece {i} exceeds minimum workspace height")
+
+        
+
+    # Check if there is workspace overlap
+    if not overlap_status:
+        print("Pattern pieces do not overlap with workspace")
+
+    return overlap_ws
+
+overlap_pieces = pattern_overlap(new_polygons)
+overlap_ws = workspace_overlap(new_polygons)
 
 ## Write new SVG file
 def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg"):
