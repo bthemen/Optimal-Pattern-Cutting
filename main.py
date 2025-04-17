@@ -218,9 +218,9 @@ def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg
         svg.append(path)
 
         # Create the <circle> element at the centroid with a radius of 20 mm (converted to pixels)
-        centroid = (polygon.centroid.x, polygon.centroid.y)
+        centroid = (px_to_mm(polygon.centroid.x), px_to_mm(polygon.centroid.y))
         circle_element = etree.SubElement(svg, '{http://www.w3.org/2000/svg}circle', cx=str(centroid[0]), cy=str(centroid[1]),
-                                          r=str(20), fill="red")
+                                          r=str(5), fill="red")
 
     # Write the SVG to file
     tree = etree.ElementTree(svg)
