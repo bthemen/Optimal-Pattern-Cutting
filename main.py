@@ -179,8 +179,8 @@ for i, polygon in enumerate(polygons):
      centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
 
 ## Moving centroids
-translation = np.array([5, -15])
-rotation = 15
+translation = [0, 0]
+rotation = 0
 
 new_polygons = []
 for polygon in polygons:
