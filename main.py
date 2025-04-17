@@ -12,6 +12,7 @@ import math
 
 # Polygon creation
 from shapely.geometry import Polygon
+from shapely.affinity import translate, rotate
 
 ## Workspace parameters
 ws_width = 1300     # Workspace width [mm]
@@ -177,6 +178,15 @@ centroids = np.empty((pattern_number, 2), dtype=float)
 for i, polygon in enumerate(polygons):
      centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
 
+## Moving centroids
+translation = np.array([5, -15])
+rotation = 15
+
+new_polygons = []
+for polygon in polygons:
+     p = translate(polygon, xoff=translation[0], yoff=translation[1])
+     new_polygons.append(rotate(p, angle=rotation))
+
 ## Write new SVG file
 def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg"):
     output_dir = Path("svg-output")
@@ -228,4 +238,4 @@ def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg
 
     print(f"SVG with discretized polygons written to {output_path}")
 
-write_svg(polygons, ws_width, ws_height, inputFile)
+write_svg(new_polygons, ws_width, ws_height, inputFile)
