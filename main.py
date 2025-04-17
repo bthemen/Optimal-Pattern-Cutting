@@ -91,7 +91,8 @@ for svg_path in svg_paths:
         path = parse_path(d_attr)   # Convert to path object
         paths.append(path)          # Store path objects
 
-print(f"Found {len(paths)} pattern pieces")
+pattern_number = len(paths)     # Number of pattern pieces
+print(f"Found {pattern_number} pattern pieces")
 
 ## Extract polygon coordinates from path objects
 # Define cubic Bezier function
@@ -108,16 +109,15 @@ def cubic_bezier(t, p0, p1, p2, p3):
             t ** 3 * p3)
 
 # Extract coordinates
-# Coordinates are stored in pixels!!
 coordinates = []
 
-for path in paths:  # Loop over all pattern pieces
+for piece, path in enumerate(paths):  # Loop over all pattern pieces
     coords = []
-    for segment in path:    # Loop over all path segments
+    for i, segment in enumerate(path):    # Loop over all path segments
         if isinstance(segment, Move):           # Move to
-                coords.append((segment.end.real, segment.end.imag))
+                coords.append(px_to_mm(np.array([segment.end.real, segment.end.imag])))
         elif isinstance(segment, Line):         # Line to
-                coords.append((segment.end.real, segment.end.imag))
+                coords.append(px_to_mm(np.array([segment.end.real, segment.end.imag])))
         elif isinstance(segment, CubicBezier):  # Cubic Bezier curve
                 # Extract data from segment
                 p0 = np.array((segment.start.real, segment.start.imag))
@@ -129,11 +129,11 @@ for path in paths:  # Loop over all pattern pieces
                 curve_length = segment.length(error = 1e-5)
                 num_points = math.ceil(curve_length / ws_step)
 
-                for i in range(num_points - 1):
-                    t = (i + 1) / (num_points - 1)  # t goes from 0 to 1
+                for j in range(num_points - 1):
+                    t = (j + 1) / (num_points - 1)  # t goes from 0 to 1
                     point = cubic_bezier(t, p0, p1, p2, p3)
 
-                    coords.append(point.tolist())
+                    coords.append(px_to_mm(point))
 
         elif isinstance(segment, Close):        # Close path
                 pass
@@ -173,9 +173,9 @@ overlap_pieces = check_for_overlaps(polygons)
 
 ## Centroid calculation
 # Calculate the geometric center of each polygon
-centroids = []
-for polygon in polygons:
-     centroids.append((polygon.centroid.x, polygon.centroid.y))
+centroids = np.empty((pattern_number, 2), dtype=float)
+for i, polygon in enumerate(polygons):
+     centroids[i] = np.array((polygon.centroid.x, polygon.centroid.y))
 
 ## Write new SVG file
 def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg"):
@@ -200,11 +200,11 @@ def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg
             continue  # Skip empty polygons
 
         # Get the coordinates of the polygon and convert them into a list of points
-        coordinates = list(polygon.exterior.coords)
+        coordinates = polygon.exterior.coords
 
         # Build path data using M, L, and Z commands
-        d_parts = [f"M {px_to_mm(coordinates[0][0])} {px_to_mm(coordinates[0][1])}"]
-        d_parts += [f"L {px_to_mm(x)} {px_to_mm(y)}" for (x, y) in coordinates[1:]]
+        d_parts = [f"M {coordinates[0][0]} {coordinates[0][1]}"]
+        d_parts += [f"L {x} {y}" for (x, y) in coordinates[1:]]
         d_parts.append("Z")  # Close the polygon
 
         d_attr = " ".join(d_parts)
@@ -218,8 +218,8 @@ def write_svg(polygons, ws_width, ws_height, output_filename="filtered_paths.svg
         svg.append(path)
 
         # Create the <circle> element at the centroid with a radius of 20 mm (converted to pixels)
-        centroid = (px_to_mm(polygon.centroid.x), px_to_mm(polygon.centroid.y))
-        circle_element = etree.SubElement(svg, '{http://www.w3.org/2000/svg}circle', cx=str(centroid[0]), cy=str(centroid[1]),
+        centroid = (polygon.centroid.x, polygon.centroid.y)
+        etree.SubElement(svg, '{http://www.w3.org/2000/svg}circle', cx=str(centroid[0]), cy=str(centroid[1]),
                                           r=str(5), fill="red")
 
     # Write the SVG to file
