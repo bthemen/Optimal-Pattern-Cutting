@@ -164,6 +164,39 @@ for polygon in polygons:
      p = translate(polygon, xoff=translation[0], yoff=translation[1])
      new_polygons.append(rotate(p, angle=rotation))
 
+## Calculate effective area used for pattern cutting
+def cut_area(polygons):
+    """
+    Calculate area spanned by all pattern pieces. Outer coordinates are used to calculate the area of a square.
+    """
+
+    # Loop over pattern pieces
+    for i, polygon in enumerate(polygons):
+        # Get coordinates
+        bounds = polygon.bounds
+         
+        if i == 0:
+            # Initialization
+            min_width = bounds[0]
+            min_height = bounds[1]
+            max_width = bounds[2]
+            max_height = bounds[3]
+            continue
+
+        # Update
+        min_width = min(min_width, bounds[0])
+        min_height = min(min_height, bounds[1])
+        max_width = max(max_width, bounds[2])
+        max_height = max(max_height, bounds[3])
+
+    # Calculate the effective area (as a square)
+    effective_area = (max_width - min_width) * (max_height - min_height)
+
+    return effective_area
+
+ref_area = cut_area(polygons)
+current_area = cut_area(new_polygons)
+print(f"Current area: {current_area / ref_area * 100:.2f}%")
 
 ## Overlap detection
 # Between pattern pieces
@@ -219,8 +252,6 @@ def workspace_overlap(polygons, width=ws_width, height=ws_height):
         if coord_min[1] < ws_tolerance:
             overlap_status = True
             print(f"Pattern piece {i} exceeds minimum workspace height")
-
-        
 
     # Check if there is workspace overlap
     if not overlap_status:
