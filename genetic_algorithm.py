@@ -8,6 +8,7 @@ POPULATION_SIZE = 100   # Population per generation
 GENOME_LENGTH   = 20    # Number of design variables per genome
 GENERATIONS     = 200   # Number of generations in evolution
 ELITE_SIZE      = 5     # Number of elite genomes to be carried over
+PARENT_SIZE     = 20    # Number of parents for crossover
 CROSSOVER_RATE  = 0.7   # Percentage chance of a genome crossover
 MUTATION_RATE   = 0.01  # Percentage chance of a genome mutation
 
@@ -76,19 +77,27 @@ def fitness_scaling(fitness_values, parents_number):
 
     return expectation
 
-# Select parent
-def select_parent(population, fitness_values):
-    ## TODO: does not work for this use case, try @selectionroulette as in MATLAB
-    total_fitness = sum(fitness_values)
-    pick = random.uniform(0, total_fitness)
-    current = 0
-    for individual, fitness_value in zip(population, fitness_values):
-        current += fitness_value
-        if current > pick:
-            return individual
+# Select parents
+def select_parent(expectation, parent_size):
+    # Return indices of parents chosen for crossover mutation
+
+    # Create a dart wheel based on fit genome probabilities
+    wheel = np.cumsum(expectation) / parent_size
+
+    # Add genome as parent if random number lands in its roulette slot
+    parents = np.zeros(parent_size)
+    for i in range(parent_size):
+        r = random.random() # Random value between 0 and 1
+        for j in range(POPULATION_SIZE):
+            if r < wheel[j]:
+                parents[i] = j
+                break
+
+    return parents
         
 pop = init_population(POPULATION_SIZE, GENOME_LENGTH)
 fitness_values = []
 for individual in pop:
     fitness_values.append(fitness(individual))
-scaling = fitness_scaling(fitness_values, 2)
+expectation = fitness_scaling(fitness_values, PARENT_SIZE)
+parents = select_parent(expectation, PARENT_SIZE)
