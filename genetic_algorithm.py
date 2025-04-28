@@ -138,6 +138,8 @@ def select_kids_crossover(genomes, parents):
 
 # Create mutated kids
 def select_kids_mutate(genomes, parents):
+    # TODO: mutations should be based on constraints
+
     kids_mutated = []   # Initialization
     for i in range(len(parents)):
         # Get kid
@@ -158,17 +160,41 @@ def select_kids_mutate(genomes, parents):
 
     return kids_mutated
 
+def genetic_algorithm():
+    # Initialize population
+    population = init_population()
 
-pop = init_population()
-fitness_values = []
-for individual in pop:
-    fitness_values.append(fitness(individual))
-expectation = fitness_scaling(fitness_values)
-parents = select_parent(expectation)
-kids_elite = select_kids_elite(pop, fitness_values)
-kids_crossover = select_kids_crossover(pop, parents[:(2 * CROSSOVER_SIZE)])
-kids_mutated = select_kids_mutate(pop, parents[(2 * CROSSOVER_SIZE):])
+    # Loop through generations
+    for generation in range(GENERATIONS):
+        # Calculate fitness values
+        fitness_values = [fitness(genome) for genome in population]
+        top_fitness = min(fitness_values)
 
-new_pop = kids_elite + kids_crossover + kids_mutated
+        # Output generation score
+        print(f"Generation {generation}: best fitness {top_fitness}")
 
-exit(1)
+        # Calculate expectation values for parents
+        expectation = fitness_scaling(fitness_values)
+
+        # Select parents
+        parents = select_parent(expectation)
+
+        # Create kids
+        kids_elite = select_kids_elite(population, fitness_values) # Elites
+        kids_crossover = select_kids_crossover(population, parents[:(2 * CROSSOVER_SIZE)]) # Crossover
+        kids_mutated = select_kids_mutate(population, parents[(2 * CROSSOVER_SIZE):])  # Mutations
+
+        # Make the new population
+        population = kids_elite + kids_crossover + kids_mutated
+
+    # Calculate best fitness
+    final_fitness = [fitness(genome) for genome in population]
+    best_index = final_fitness.index(min(final_fitness))
+    best_solution = population[best_index]
+    best_fitness = final_fitness[best_index]
+
+    # Print results
+    print(f"Best solution [{best_index}, fitness: {best_fitness}]: {best_solution}")
+    
+
+genetic_algorithm()
