@@ -1,5 +1,7 @@
+import numpy as np
+
 class Fitness:
-    def __init__(self, genome):
+    def __init__(self, genome: np.array) -> float:
         # Index spacing
         spacing = 2
 

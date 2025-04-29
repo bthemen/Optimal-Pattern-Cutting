@@ -1,7 +1,8 @@
+import numpy as np
 import random
 
 class SelectKidsCrossover:
-    def __init__(self, genomes, parents, crossover_ratio):
+    def __init__(self, genomes: list[np.array], parents: np.array, crossover_ratio: float) -> list[np.array]:
         # Get number of kids
         kids_size = len(parents) // 2
 

@@ -1,7 +1,9 @@
+import numpy as np
+
 import random_genome
 
 class InitPopulation:
-    def __init__(self, genome_length, ws_width, ws_height, population_size):
+    def __init__(self, genome_length: int, ws_width: int, ws_height: int, population_size: int) -> list[np.array]:
 
         # TODO: add initialization through provided SVG
 

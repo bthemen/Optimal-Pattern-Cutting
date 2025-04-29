@@ -1,7 +1,7 @@
 import numpy as np
 
 class RandomGenome:
-    def __init__(self, genome_length, ws_width, ws_height):
+    def __init__(self, genome_length: int, ws_width: int, ws_height: int) -> np.array:
         # Create random values for the x and y coordinates of the pattern piece centers
         random_value_x = ws_width * np.random.uniform(0, 1, size=genome_length // 2)
         random_value_y = ws_height * np.random.uniform(0, 1, size=genome_length // 2)

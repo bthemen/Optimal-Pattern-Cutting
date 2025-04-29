@@ -2,7 +2,7 @@ import numpy as np
 import random_genome
 
 class SelectKidsMutate:
-    def __init__(self, genomes, parents, genome_length, ws_width, ws_height, mutation_rate):
+    def __init__(self, genomes: list[np.array], parents: np.array, genome_length: int, ws_width: int, ws_height: int, mutation_rate: float) -> list[np.array]:
         # TODO: mutations should be based on constraints
 
         kids_mutated = []   # Initialization

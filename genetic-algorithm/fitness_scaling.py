@@ -1,7 +1,7 @@
 import numpy as np
 
 class FitnessScaling:
-    def __init__(self, fitness_values, population_size, parent_size):
+    def __init__(self, fitness_values: list[np.array], population_size: int, parent_size: int) -> np.array:
         # Get the indices that would sort the list
         sorted_indices = sorted(range(population_size), key=lambda i: fitness_values[i])
 

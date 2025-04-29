@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class SelectParent:
-    def __init__(self, expectation, population_size, parent_size):
+    def __init__(self, expectation: np.array, population_size: int, parent_size: int) -> np.array:
         # Return indices of parents chosen for crossover mutation
 
         # Create a dart wheel based on fit genome probabilities

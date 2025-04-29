@@ -1,4 +1,4 @@
-import init_population, fitness_scaling, fitness, random_genome, select_kids_crossover, select_kids_elite, select_kids_mutate
+import init_population, fitness_scaling, fitness, select_kids_crossover, select_kids_elite, select_kids_mutate
 import select_parent
 
 ## Parameters
