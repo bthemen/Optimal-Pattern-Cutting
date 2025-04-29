@@ -1,4 +1,10 @@
-import init_population, fitness_scaling, fitness, select_kids_crossover, select_kids_elite, select_kids_mutate
+# Local application imports
+import init_population
+import fitness_scaling
+import fitness
+import crossover
+import elite
+import mutate
 import select_parent
 
 ## Parameters
@@ -41,9 +47,9 @@ for generation in range(GENERATIONS):
     parents = select_parent(expectation, POPULATION_SIZE, PARENT_SIZE)
 
     # Create kids
-    kids_elite = select_kids_elite(population, fitness_values, POPULATION_SIZE, ELITE_SIZE) # Elites
-    kids_crossover = select_kids_crossover(population, parents[:(2 * CROSSOVER_SIZE)], CROSSOVER_RATIO) # Crossover
-    kids_mutated = select_kids_mutate(population, parents[(2 * CROSSOVER_SIZE):], GENOME_LENGTH, WS_WIDTH, WS_HEIGHT, MUTATION_RATE)  # Mutations
+    kids_elite = elite(population, fitness_values, POPULATION_SIZE, ELITE_SIZE) # Elites
+    kids_crossover = crossover(population, parents[:(2 * CROSSOVER_SIZE)], CROSSOVER_RATIO) # Crossover
+    kids_mutated = mutate(population, parents[(2 * CROSSOVER_SIZE):], GENOME_LENGTH, WS_WIDTH, WS_HEIGHT, MUTATION_RATE)  # Mutations
 
     # Make the new population
     population = kids_elite + kids_crossover + kids_mutated
