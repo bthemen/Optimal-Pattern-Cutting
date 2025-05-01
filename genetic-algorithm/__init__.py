@@ -1,11 +1,24 @@
-# Local application imports
-import init_population
-import fitness_scaling
-import fitness
-import crossover
-import elite
-import mutate
-import select_parent
+# __init__.py
+
+from .init_population import init_population
+from .fitness_scaling import fitness_scaling
+from .fitness import fitness
+from .crossover import crossover
+from .elite import elite
+from .mutate import mutate
+from .select_parent import select_parent
+
+__all__ = [
+    "init_population",
+    "fitness_scaling",
+    "fitness",
+    "crossover",
+    "elite",
+    "mutate",
+    "select_parent",
+]
+
+# TODO: __init__ should not contain code besides importing
 
 ## Parameters
 # Genetic algorithm parameters (set)
