@@ -3,7 +3,7 @@ from workspace import Workspace
 
 class Genome:
     # Constructor
-    def __init__(self, genome_length: int) -> None:
+    def __init__(self, genome_length: int, ws: Workspace) -> None:
         # TODO: Change exception to divisible by 3 after adding rotation
         # Exceptions
         if genome_length <= 0 or genome_length % 2 != 0:
@@ -11,10 +11,15 @@ class Genome:
         
         # Define fields
         self.length = genome_length # Number of variables in design vector
-        self.design_vector: np.ndarray | None = None    # Initialize design vector
+
+        # Initialize genome
+        self._random_genome(ws)  # Initialize design vector
+
+        # Calculate fitness
+        self.calculate_fitness()    # Initialize fitness
 
     # Create random genome
-    def random_genome(self, ws: Workspace) -> None:
+    def _random_genome(self, ws: Workspace) -> None:
         # Exceptions
         if not isinstance(ws, Workspace):
             raise TypeError("Expected a Workspace instance.")
@@ -34,7 +39,7 @@ class Genome:
         self.design_vector = design_vector
 
     # Calculate fitness
-    def calculate_fitness(self) -> float:
+    def calculate_fitness(self) -> None:
         # Exceptions
         if self.design_vector is None:
             raise ValueError("Design vector has not been initialized.")
@@ -51,7 +56,7 @@ class Genome:
         y_min, y_max = np.min(y_values), np.max(y_values)
 
         # Calculate effective area
-        return (x_max - x_min) * (y_max - y_min)
+        self.fitness = (x_max - x_min) * (y_max - y_min)
 
     # String representation
     def __str__(self) -> str:
