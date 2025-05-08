@@ -1,6 +1,6 @@
 from genome import Genome
 from workspace import Workspace
-from evolution_config import EvolutionConfig
+import numpy as np
 
 class Population:
     # Constructor
@@ -20,6 +20,24 @@ class Population:
             population[i] = genome
 
         self.genomes = population
+
+    # Scale fitness
+    def scale_fitness(self, parent_size: int) -> np.array:
+        # Get the indices that would sort the list
+        sorted_indices = sorted(range(self.size), key=lambda i: self.genomes[i].fitness)
+
+        # Create expectation values
+        expectation = np.zeros(self.size)
+        expectation[sorted_indices] = 1 / np.sqrt(np.arange(1, self.size + 1))
+
+        # Scale with number of parents
+        expectation = parent_size * expectation / sum(expectation)
+
+        return expectation
+
+    # Set genomes
+    def set_genomes(self, genomes: list[Genome]) -> None:
+        self.genomes = genomes
 
     # String representation
     def __str__(self) -> str:

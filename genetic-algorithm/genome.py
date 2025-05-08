@@ -18,6 +18,14 @@ class Genome:
         # Calculate fitness
         self.calculate_fitness()    # Initialize fitness
 
+    def __init__(self, design_vector: np.array) -> None:
+        # Create object by design vector
+        self.design_vector  = design_vector
+        self.length         = len(design_vector)
+
+        # Calculate fitness
+        self.calculate_fitness()
+
     # Create random genome
     def _random_genome(self, ws: Workspace) -> None:
         # Exceptions
@@ -57,6 +65,22 @@ class Genome:
 
         # Calculate effective area
         self.fitness = (x_max - x_min) * (y_max - y_min)
+
+    # Mutate genome
+    def mutate_genome(self, mutation_rate: float, ws: Workspace) -> None:
+        # Find mutation points
+        r = np.random.rand(1, self.length)
+        mutation_points = np.where(r < mutation_rate)   # Mutate genes that are below the threshold
+
+        # Create new genome
+        mutated_genome = self._random_genome(ws)
+
+        # Create mutated kid
+        self.design_vector[mutation_points] = mutated_genome[mutation_points]
+
+    # Set design vector
+    def set_design_vector(self, design_vector: np.array) -> None:
+        self.design_vector = design_vector
 
     # String representation
     def __str__(self) -> str:

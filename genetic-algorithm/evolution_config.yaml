@@ -1,5 +1,5 @@
 # population_config.yaml
-elite_size: 5
+elite_size: 6
 crossover_rate: 0.7
 crossover_ratio: 0.5
-mutation_rate: 0.1
+mutation_rate: 0.01
